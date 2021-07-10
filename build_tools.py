@@ -3,6 +3,7 @@ import os
 from build_utils import *
 path = os.path
 mapper = None
+
 if USE_AAPT2:
     mapper = {
         "minSdkVersion":"min-sdk-version",
