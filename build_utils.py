@@ -1,13 +1,13 @@
 import logging,os
 
 PREFIX=os.getenv("PREFIX")
-SIGNING_KEY_PATH = "./main.key"
 USE_AAPT2 = False 
 ANDROID_JAR = f"{PREFIX}/share/java/android.jar"
 #AAPT_ANDROID_JAR = ANDROID_JAR
 AAPT_ANDROID_JAR = f"{PREFIX}/share/aapt/android.jar"
 DX_JAR_FILE = f"{PREFIX}/share/dex/dx.jar"
 AIDL_FRAMEWORK = f"{PREFIX}share/java/framework.aidl"
+TEMP_DIR = f"{PREFIX}/tmp"
 REQ_PKG=("ecj","dx","aapt","apksigner","zipmerge")
 BUILD_APK_PATH ="~/storage/downloads/buildAPKs/"
 LIBRARY_PATHS = [".."]
@@ -24,7 +24,7 @@ USE_NAMED_CANDIDATES = False
 #when set to True, maven will use best matching local dependencies even if they are a wrong version
 FORCE_USE_LOCAL=False
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 #LOG_LEVEL = 1000 #disable logs
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 #allow matching of 2.7+ with 2.7-beta etc
@@ -43,10 +43,38 @@ LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 import sys
 import re
 path = os.path
-FIRST = "."
-if len(sys.argv)>1:
-    FIRST = sys.argv[1]
-  
+TARGET = "."
+CONFIG = None
+MODE = 'SOURCE'
+HELP = False
+LIST_DEPS = False
+t = 0
+while t<len(sys.argv):
+    i = sys.argv[t]
+    if i[0]=='-':
+        c = i[1:]
+        if c == 'h':
+            HELP = True
+            break
+        elif c == 'a':
+            USE_AAPT2 = True
+        elif c == 'q':
+            LOG_LEVEL = logging.WARNING
+        elif c == 'l':
+            LIST_DEPS = True
+        elif c == 'c':
+            t += 1
+            configFile = open(sys.argv[t],'r')
+            import json
+            CONFIG = json.load(configFile)
+        elif c == 'd':
+            LOG_LEVEL = logging.DEBUG
+        elif c == 'm':
+            t += 1
+            MODE = sys.argv[t]
+    else: TARGET = i
+    t+=1
+    
 system = os.system
 def printer(args):
     debug(args)
@@ -108,6 +136,14 @@ def glob(path_str,glob_,add_folders=False,paths=None,root=None):
             glob(i.path,glob_,add_folders,paths,path.join(root,i.name))
     return paths
 
+def recursiveDelete(p):
+    if path.isdir(p):
+        for i in os.listdir(p):
+            recursiveDelete(p+'/'+i)
+        os.rmdir(p)
+    else:
+        os.remove(p)
+        
 def checkSet(iterable):
         checker = []
         for i in iterable:

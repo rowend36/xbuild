@@ -52,18 +52,20 @@ def aapt2_link(res_paths,java_path,manifest,options={},final_ids=False):
     _temp_id=0
     def tempfile(text):
         nonlocal _temp_id
-        _temp_id+=1
-        filer = f"args{_temp_id}.txt"
+        #_temp_id+=1
+        filer = TEMP_DIR+f"/args{_temp_id}.txt"
         argfile = open(filer,'w')
         argfile.write(text)
         argfile.close()
-        return filer
+        return " @"+filer
 
     command = "aapt2 link "
     res_paths = res_paths[-1::-1]
     res_array = []
+    a = ""
     for i in res_paths:
-        res_array.append("@"+tempfile(" ".join(glob(i,"*flat"))))
+        a += " ".join(glob(i,"*flat"))+" "
+    res_array.append(tempfile(a))
     command += " --auto-add-overlay "
     if not final_ids:
         command+=" --non-final-ids "
@@ -100,6 +102,7 @@ def aidl_compile(aidl_files,imports_path,output_path):
     for i in imports_path:
         imports += f"-I{i} "
     return os.system(f"aidl -p{preprocess} {imports}{inputs} -o{output_path}") == 0
+
 def dx_dex(obj_path,output_path):
     command = "dx --dex "
     if output_path:
@@ -112,6 +115,7 @@ def dx_merge(output_path,*dexfiles):
     command += output_path+" "
     command += " ".join(dexfiles)
     return os.system(command) == 0
+
 def aapt2_package_res(manifest,res_array,classes_dex_dir,apk_file,options={}):
     command = f"zipmerge {apk_file} linked.zip"
     result = os.system(command)
@@ -137,7 +141,7 @@ def package_res(manifest,res_array,classes_dex_dir,apk_file,options={}):
     if result == 0:
         path_dir = os.getcwd()
         apk_file = path.realpath(apk_file)
-        command=f"cd {classes_dex_dir} && aapt remove -f {apk_file} classes.dex && aapt add -f {apk_file} classes.dex;cd {path_dir}"
+        command=f"cd {classes_dex_dir} && aapt remove -f {apk_file} classes.dex;aapt add -f {apk_file} classes.dex;cd {path_dir}"
         return os.system(command) == 0
     return result == 0
         

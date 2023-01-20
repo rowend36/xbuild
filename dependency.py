@@ -234,7 +234,3 @@ def parseDependencyEntry(lib,entry,parents):
 parserDefs["dependencies"] = {
             '__entry':parseDependencyEntry
             }
-if __name__ == "__main__":
-    dep = ProjectDependency("Project",FIRST) 
-    dep.collect()
-    print(dep)
